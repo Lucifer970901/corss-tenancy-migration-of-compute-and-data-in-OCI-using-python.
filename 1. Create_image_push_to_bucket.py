@@ -11,9 +11,14 @@ import concurrent.futures
 config = oci.config.from_file(file_location="~/.oci/config_sehubjapaciaasset01") 
 image_lst = []
 backup_lst = []
+file_lst = []
+vnic_lst = []
+subnet_lst = []
+ip_lst = []
 compute_client = oci.core.ComputeClient(config)
 object_storage_client = oci.object_storage.ObjectStorageClient(config)
 block_storage_client = oci.core.BlockstorageClient(config)
+network_client = oci.core.VirtualNetworkClient(config)
 
 #name of the bucket
 bucket_name = "image_backup"
@@ -57,6 +62,34 @@ df.to_csv("Volume_Backup_details.csv")
 print(df)    
 
 ################ create the custom image  for each instance ###################
+################ get the vnic details ###################
+list_vnic_attachments_response = compute_client.list_vnic_attachments(compartment_id=config["compartment_id"])
+#print(list_vnic_attachments_response.data)
+try:
+    csv_df = pd.read_csv("list_instances.csv")
+    csv_df.dropna()
+    i = 0
+    print(csv_df)
+    for i in csv_df.index:
+        compute_id = str(csv_df.iloc[i]["Instance OCID"])
+        for a in list_vnic_attachments_response.data:
+            if compute_id == a.instance_id:
+                vnic_lst.append(a.vnic_id)
+                subnet_lst.append(a.subnet_id)
+        for b in vnic_lst:
+            list_private_ips_response = network_client.list_private_ips(vnic_id = str(b))
+            #print(list_private_ips_response.data)
+        for c in list_private_ips_response.data:
+            ip_lst.append(c.ip_address)
+            #ip_lst.append(list_private_ips_response.data.ip_address)
+            #print(subnet_lst)
+
+################ get the instance details ###################
+        get_instance_response = compute_client.get_instance(compute_id)
+#print(get_instance_response.data)
+
+
+################ create the custom image  for each instance ###################
 for instance in get_instance_response.data:
     try:
         create_image_response   = compute_client.create_image(
@@ -67,10 +100,21 @@ for instance in get_instance_response.data:
             launch_mode     = "NATIVE"))
             #append the list with custom image name and ocid
         image_lst.append([create_image_response.data.id])
+        print(subnet_lst)
+        print(ip_lst)
+        #append to the list
+        for b in ip_lst:
+        for a in subnet_lst:
+            file_lst.append([get_instance_response.data.id, get_instance_response.data.display_name, get_instance_response.data.shape_config.ocpus,get_instance_response.data.shape_config.memory_in_gbs, str(b), create_image_response.data.id, str(a),get_instance_response.data.availability_domain, get_instance_response.data.launch_options.boot_volume_type, get_instance_response.data.launch_options.network_type, get_instance_response.data.launch_options.remote_data_volume_type])
+    print(file_lst)
+    
     except:
         pass
 print(image_lst)
-
+df = pd.DataFrame(file_lst, columns=["Instance_OCID", "Instance Name", "OCPUs", "Memory in GBs", "Private IP", "Custom Image OCID", "subnet OCID","availability domain","boot_volume_type","network_type","remote_data_volume_type"])
+df = df.dropna()
+df.to_csv("instance_and_VNIC_details.csv")
+print(df)
 
 #check if the bucket already exists
 def bucket_exists(bucket_name):
