@@ -14,6 +14,8 @@ backup_name_lst = []
 block_storage_client = oci.core.BlockstorageClient(config)
 identity = oci.identity.IdentityClient(config)
 availability_domains = identity.list_availability_domains(compartment_id=config["compartment_id"])
+compute_client = oci.core.ComputeClient(config)
+
 #print(availability_domains.data)
 
 for ad in availability_domains.data:
@@ -37,21 +39,31 @@ with open('Volume_Backup_details.csv', 'r') as file:
 # Get the data from response
 print(create_volume_response.data)
 
-# Create an image source details object
-image_source_details = oci.core.models.ImageSourceDetails(
-    source_type="objectStorageUri",
-    source_uri = "https://sehubjapaciaas.objectstorage.us-ashburn-1.oci.customer-oci.com/p/HcxqBP_FXNcO1hA3AFQFxDLd2srx9dlL8BrEa8NfmfGF9R-pfwDBXMX0pqmIHXW7/n/sehubjapaciaas/b/test_bucket/o/exported-image-python-mysql",
-    os_type="linux",
-)
+# Read the CSV file
+df = pd.read_csv("custom_image_PAR_details.csv")
+# Loop through each row in the DataFrame and create an image
+# Loop through each row in the DataFrame and create an image
+for index, row in df.iterrows():
+    source_url = row['custom_image_URL']
+    image_display_name = row['custom_image_name']
+    
+    # Create an image source details object using ImageSourceViaObjectStorageUriDetails
+    image_source_details = oci.core.models.ImageSourceViaObjectStorageUriDetails(
+        source_uri=source_url,
+        source_image_type="VMDK"  # Replace with the correct image type, e.g., "qcow2", "vmdk", etc.
+    )
 
-# Create an import image request
-create_image_request = oci.core.models.CreateImageDetails(
-    compartment_id=compartment_id,
-    display_name=image_display_name,
-    launch_mode="NATIVE",
-    image_source_details=image_source_details,
-)
+    # Create an import image request
+    create_image_request = oci.core.models.CreateImageDetails(
+        compartment_id=config["compartment_id"],
+        display_name=image_display_name,
+        launch_mode="NATIVE",
+        image_source_details=image_source_details,
+    )
 
-# Initiate the import image job
-create_image_response = compute_client.create_image(create_image_request)
-print(create_image_response.data)
+    # Initiate the import image job
+    create_image_response = compute_client.create_image(create_image_request)
+    
+    # Print the response for each image
+    print(f"Image '{image_display_name}' creation response: {create_image_response.data}")
+
