@@ -17,6 +17,7 @@ list_availability_domains_response = identity_client.list_availability_domains(
     compartment_id=config["compartment_id"])
 
 # Get the data from response
+
 try:
     csv_df = pd.read_csv("instance_and_VNIC_details.csv")
     csv_df.dropna()
@@ -38,42 +39,43 @@ try:
         Remote_Data_Volume_Type = str(csv_df.iloc[i]["remote_data_volume_type"])
         
 
-    launch_instance_response = core_client.launch_instance(
-    launch_instance_details=oci.core.models.LaunchInstanceDetails(
-        availability_domain=Availability_Domain,
-        compartment_id=config["compartment_id"],
-        shape = Instance_shape,
-        display_name = Instance_name,
-        create_vnic_details=oci.core.models.CreateVnicDetails(
+        launch_instance_response = core_client.launch_instance(
+            launch_instance_details=oci.core.models.LaunchInstanceDetails(
+            availability_domain=Availability_Domain,
+            compartment_id=config["compartment_id"],
+            shape = Instance_shape,
+            display_name = Instance_name,
+            create_vnic_details=oci.core.models.CreateVnicDetails(
             assign_public_ip=True,
             assign_private_dns_record=True,
             private_ip=private_IP,    
             skip_source_dest_check=True,
             subnet_id=subnet_OCID),
             image_id=Image_OCID,
-        launch_options=oci.core.models.LaunchOptions(
+            launch_options=oci.core.models.LaunchOptions(
             boot_volume_type=Boot_Volume_Type,
             firmware="UEFI_64",
             network_type=Network_Type,
             remote_data_volume_type=Remote_Data_Volume_Type,
             is_pv_encryption_in_transit_enabled=True),
-        instance_options=oci.core.models.InstanceOptions(
+            instance_options=oci.core.models.InstanceOptions(
             are_legacy_imds_endpoints_disabled=True),
-        availability_config=oci.core.models.LaunchInstanceAvailabilityConfigDetails(
+            availability_config=oci.core.models.LaunchInstanceAvailabilityConfigDetails(
             is_live_migration_preferred=False,
             recovery_action="STOP_INSTANCE"),
-        agent_config=oci.core.models.LaunchInstanceAgentConfigDetails(
+            agent_config=oci.core.models.LaunchInstanceAgentConfigDetails(
             is_monitoring_disabled=True,
             is_management_disabled=False,
             are_all_plugins_disabled=True),
-        shape_config=oci.core.models.LaunchInstanceShapeConfigDetails(
+            shape_config=oci.core.models.LaunchInstanceShapeConfigDetails(
             ocpus=OCPUs,
             memory_in_gbs=Memory_in_gbs)))
-    
     # Get the data from response
-    print(f"Instance launched with OCID: {launch_instance_response.data.id}")
+        print(f"Instance launched with OCID: {launch_instance_response.data.id}")
 except Exception as e:
         print(e)
+        pass
+
         
         
 
