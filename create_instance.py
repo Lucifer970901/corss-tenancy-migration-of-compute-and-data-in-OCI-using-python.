@@ -10,14 +10,22 @@ config = oci.config.from_file(file_location="~/.oci/config_sehubjapaciaasset02")
 
 # Initialize service client with default config file
 core_client = oci.core.ComputeClient(config)
+# Initialize service client with default config file
+identity_client = oci.identity.IdentityClient(config)
 
+list_availability_domains_response = identity_client.list_availability_domains(
+    compartment_id=config["compartment_id"])
+
+# Get the data from response
 try:
     csv_df = pd.read_csv("instance_and_VNIC_details.csv")
     csv_df.dropna()
     i = 0
     print(csv_df)
+    for ad in list_availability_domains_response.data:
+        Availability_Domain = ad.name
+    
     for vm in csv_df.index:
-        Availability_Domain = str(csv_df.iloc[i]["availability domain"])
         Instance_name = str(csv_df.iloc[i]["Instance Name"])
         Instance_shape = str(csv_df.iloc[i]["Shape"])
         Image_OCID = str(csv_df.iloc[i]["Custom Image OCID"])
@@ -61,11 +69,12 @@ try:
         shape_config=oci.core.models.LaunchInstanceShapeConfigDetails(
             ocpus=OCPUs,
             memory_in_gbs=Memory_in_gbs)))
+    
     # Get the data from response
     print(f"Instance launched with OCID: {launch_instance_response.data.id}")
 except Exception as e:
         print(e)
-    pass
         
         
+
 
