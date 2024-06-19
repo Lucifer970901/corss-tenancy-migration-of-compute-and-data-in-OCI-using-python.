@@ -28,12 +28,13 @@ try:
         Boot_Volume_Type = str(csv_df.iloc[i]["boot_volume_type"])
         Network_Type = str(csv_df.iloc[i]["network_type"])
         Remote_Data_Volume_Type = str(csv_df.iloc[i]["remote_data_volume_type"])
+        Instance_shape = str(csv_df.iloc[i]["Shape"])
 
     launch_instance_response = core_client.launch_instance(
     launch_instance_details=oci.core.models.LaunchInstanceDetails(
         availability_domain=Availability_Domain,
         compartment_id=config["compartment_id"],
-        shape="VM.Standard.E4.Flex",
+        Shape = Instance_shape,
         display_name = Instance_name,
         create_vnic_details=oci.core.models.CreateVnicDetails(
             assign_public_ip=True,
