@@ -1,12 +1,11 @@
 import time
 import oci
 import json
-from pandas.io.json import json_normalize
 import pandas as pd
+from pandas import json_normalize
 import datetime
 import os.path
-
-config = oci.config.from_file()
+config = oci.config.from_file(file_location="~/.oci/config_sehubjapaciaasset02")
 
 
 # Initialize service client with default config file
@@ -20,36 +19,36 @@ try:
     for vm in csv_df.index:
         Availability_Domain = str(csv_df.iloc[i]["availability domain"])
         Instance_name = str(csv_df.iloc[i]["Instance Name"])
+        Instance_shape = str(csv_df.iloc[i]["Shape"])
+        Image_OCID = str(csv_df.iloc[i]["Custom Image OCID"])
+        subnet_OCID = str(csv_df.iloc[i]["subnet OCID"])
         OCPUs = float(csv_df.iloc[i]["OCPUs"])
         Memory_in_gbs = float(csv_df.iloc[i]["Memory in GBs"])
         private_IP = str(csv_df.iloc[i]["Private IP"])
-        custom_image_ocid = str(csv_df.iloc[i]["Custom Image OCID"])
-        subnet_ocid = str(csv_df.iloc[i]["subnet OCID"])
         Boot_Volume_Type = str(csv_df.iloc[i]["boot_volume_type"])
         Network_Type = str(csv_df.iloc[i]["network_type"])
         Remote_Data_Volume_Type = str(csv_df.iloc[i]["remote_data_volume_type"])
-        Instance_shape = str(csv_df.iloc[i]["Shape"])
+        
 
     launch_instance_response = core_client.launch_instance(
     launch_instance_details=oci.core.models.LaunchInstanceDetails(
         availability_domain=Availability_Domain,
         compartment_id=config["compartment_id"],
-        Shape = Instance_shape,
+        shape = Instance_shape,
         display_name = Instance_name,
         create_vnic_details=oci.core.models.CreateVnicDetails(
             assign_public_ip=True,
             assign_private_dns_record=True,
             private_ip=private_IP,    
             skip_source_dest_check=True,
-            subnet_id=subnet_ocid),
-        image_id=custom_image_ocid,
+            subnet_id=subnet_OCID),
+            image_id=Image_OCID,
         launch_options=oci.core.models.LaunchOptions(
             boot_volume_type=Boot_Volume_Type,
             firmware="UEFI_64",
             network_type=Network_Type,
             remote_data_volume_type=Remote_Data_Volume_Type,
-            is_pv_encryption_in_transit_enabled=True,
-            is_consistent_volume_naming_enabled=False),
+            is_pv_encryption_in_transit_enabled=True),
         instance_options=oci.core.models.InstanceOptions(
             are_legacy_imds_endpoints_disabled=True),
         availability_config=oci.core.models.LaunchInstanceAvailabilityConfigDetails(
@@ -62,9 +61,11 @@ try:
         shape_config=oci.core.models.LaunchInstanceShapeConfigDetails(
             ocpus=OCPUs,
             memory_in_gbs=Memory_in_gbs)))
+    # Get the data from response
+    print(f"Instance launched with OCID: {launch_instance_response.data.id}")
 except Exception as e:
         print(e)
-        print("Some Error")
+    pass
         
-# Get the data from response
-print(launch_instance_response.data)
+        
+
