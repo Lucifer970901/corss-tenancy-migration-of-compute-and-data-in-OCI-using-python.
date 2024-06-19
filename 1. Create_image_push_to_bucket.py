@@ -108,8 +108,10 @@ for instance in get_instance_response.data:
             file_lst.append([get_instance_response.data.id, get_instance_response.data.display_name, get_instance_response.data.shape, get_instance_response.data.shape_config.ocpus,get_instance_response.data.shape_config.memory_in_gbs, str(b), create_image_response.data.id, str(a),get_instance_response.data.availability_domain, get_instance_response.data.launch_options.boot_volume_type, get_instance_response.data.launch_options.network_type, get_instance_response.data.launch_options.remote_data_volume_type])
     print(file_lst)
     
-    except:
+    except Exception as e:
+        print(e)
         pass
+
 print(image_lst)
 df = pd.DataFrame(file_lst, columns=["Instance_OCID", "Instance Name", "Shape", "OCPUs", "Memory in GBs", "Private IP", "Custom Image OCID", "subnet OCID","availability domain","boot_volume_type","network_type","remote_data_volume_type"])
 df = df.dropna()
