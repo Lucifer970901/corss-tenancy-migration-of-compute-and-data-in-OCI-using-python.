@@ -1,5 +1,6 @@
 import oci
 import pandas as pd
+import ast
 
 # Load OCI configuration from file
 config = oci.config.from_file("~/.oci/config_sehubjapaciaasset02")
@@ -7,7 +8,12 @@ config = oci.config.from_file("~/.oci/config_sehubjapaciaasset02")
 # Initialize OCI clients
 compute_client = oci.core.ComputeClient(config)
 identity_client = oci.identity.IdentityClient(config)
+list_availability_domains_response = identity_client.list_availability_domains(
+    compartment_id=config["compartment_id"])
 
+# Get the data from response
+for ad in list_availability_domains_response.data:
+    availability_domain = ad.name
 # Function to launch instances
 def launch_instance(instance_name, instance_shape, image_ocid, subnet_ocid, ocpus, memory_in_gbs, private_ip, boot_volume_type, network_type, remote_data_volume_type, availability_domain):
     try:
@@ -61,16 +67,14 @@ try:
         instance_name = row["Instance Name"]
         instance_shape = row["Shape"]
         image_ocid = row["Custom Image OCID"]
-        subnet_ocid = row["subnet OCID"]
+        subnet_ocid = ast.literal_eval(row["Subnets"])[0]
         ocpus = float(row["OCPUs"])
         memory_in_gbs = float(row["Memory in GBs"])
-        private_ip = row["Private IP"]
-        boot_volume_type = row["boot_volume_type"]
-        network_type = row["network_type"]
-        remote_data_volume_type = row["remote_data_volume_type"]
-        
-        # Assuming each row represents a different availability domain
-        availability_domain = row["availability domain"]
+        private_ip = ast.literal_eval(row["Private IPs"])[0]
+        boot_volume_type = row["Boot Volume Type"]
+        network_type = row["Network Type"]
+        remote_data_volume_type = row["Remote Data Volume Type"]
+        availability_domain = availability_domain
 
         # Launch instance with unique details from each row
         instance_id = launch_instance(instance_name, instance_shape, image_ocid, subnet_ocid, ocpus, memory_in_gbs, private_ip, boot_volume_type, network_type, remote_data_volume_type, availability_domain)
