@@ -26,6 +26,36 @@ print("Namespace:", get_namespace_response.data)
 image_lst = []
 backup_lst = []
 file_lst = []
+################ create the block volume backup  ###################
+# List all block volumes in the specified compartment
+block_volumes = block_storage_client.list_volumes(compartment_id=config["compartment_id"])
+
+# Loop through the block volumes and print their details
+for block_volume in block_volumes.data:
+    print("Block Volume Name:", block_volume.display_name)
+    print("Block Volume OCID:", block_volume.id)
+    
+    # Create a request to create a block volume backup.
+    create_backup_details = oci.core.models.CreateVolumeBackupDetails(
+    volume_id=block_volume.id,
+    display_name=block_volume.display_name
+)
+# Make the API call to create the backup.
+    try:
+        create_backup_response = block_storage_client.create_volume_backup(create_backup_details)
+        backup = create_backup_response.data
+        print(backup)
+        print("Backup OCID:", backup.id)
+        print("Backup State:", backup.lifecycle_state)
+        backup_lst.append([backup.id,backup.display_name])
+    except oci.exceptions.ServiceError as e:
+        print("Error creating backup:", e)
+
+# push the backup details to a file
+df = pd.DataFrame(backup_lst, columns=["Volume_Backup_ID", "Volume_Backup_Name"])
+df = df.dropna()
+df.to_csv("Volume_Backup_details.csv")
+print(df)    
 
 # Read the instances CSV file
 csv_df = pd.read_csv("list_instances.csv")
