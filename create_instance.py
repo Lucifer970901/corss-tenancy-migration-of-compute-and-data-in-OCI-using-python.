@@ -78,10 +78,6 @@ try:
 
         # Launch instance with unique details from each row
         instance_id = launch_instance(instance_name, instance_shape, image_ocid, subnet_ocid, ocpus, memory_in_gbs, private_ip, boot_volume_type, network_type, remote_data_volume_type, availability_domain)
-        
-        if instance_id:
-            # Optionally, you can perform further operations here
-            pass
 
 except FileNotFoundError:
     print("Error: instance_and_VNIC_details.csv file not found.")
